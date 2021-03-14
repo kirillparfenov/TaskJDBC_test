@@ -1,17 +1,13 @@
 package jm.task.core.jdbc.util;
 
-import com.mysql.cj.jdbc.Driver;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.Metadata;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
-import org.hibernate.dialect.MySQLDialect;
+import org.hibernate.service.ServiceRegistry;
 
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
 public class Util {
     // реализуйте настройку соеденения с БД
@@ -22,7 +18,6 @@ public class Util {
     private static final String DIALECT = "org.hibernate.dialect.MySQLDialect";
 
     private static SessionFactory sessionFactory;
-    private static StandardServiceRegistry standardServiceRegistry;
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USERNAME, PASSWORD);
@@ -31,24 +26,22 @@ public class Util {
     public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             try {
-                StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
+                Configuration configuration = new Configuration();
 
-                Map<String, String> dbSettings = new HashMap<>();
-                dbSettings.put(Environment.URL, URL);
-                dbSettings.put(Environment.USER, USERNAME);
-                dbSettings.put(Environment.PASS, PASSWORD);
-                dbSettings.put(Environment.DRIVER, DRIVER);
-                dbSettings.put(Environment.DIALECT, DIALECT);
-                dbSettings.put(Environment.SHOW_SQL, "true");
+                Properties settings = new Properties();
+                settings.put(Environment.URL, URL);
+                settings.put(Environment.USER, USERNAME);
+                settings.put(Environment.PASS, PASSWORD);
+                settings.put(Environment.DRIVER, DRIVER);
+                settings.put(Environment.DIALECT, DIALECT);
+                settings.put(Environment.SHOW_SQL, "true");
 
-                registryBuilder.applySettings(dbSettings);
+                configuration.setProperties(settings);
 
-                standardServiceRegistry = registryBuilder.build();
+                ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+                        .applySettings(configuration.getProperties()).build();
 
-                MetadataSources metadataSources = new MetadataSources(standardServiceRegistry);
-                Metadata metadata = metadataSources.getMetadataBuilder().build();
-
-                sessionFactory = metadata.getSessionFactoryBuilder().build();
+                sessionFactory = configuration.buildSessionFactory(serviceRegistry);
             } catch (Exception e) {
                 System.out.println("исключение!");
             }
